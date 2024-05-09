@@ -95,6 +95,8 @@ namespace GenerationEvent
             results.AppendLine();
 
             resultTextBox.Text = results.ToString();
+            results.AppendLine("Общий вывод: с увеличением N погрешность между теоретической и эмпирической вероятностями уменьшается, что демонстрирует закон больших чисел.");
+            resultTextBox.Text = results.ToString();
             currentIndex++;  // Увеличиваем индекс для следующего нажатия кнопки
         }
 
