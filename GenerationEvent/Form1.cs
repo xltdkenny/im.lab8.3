@@ -12,10 +12,12 @@ namespace GenerationEvent
 {
     public partial class Form1 : Form
     {
+        private int currentIndex = 0;
+        private int[] N = new int[] { 10, 100, 1000, 10000 };  // Разные значения N
+
         public Form1()
         {
             InitializeComponent();
-            RunExperiments();
             AddDataToDataGridView();
         }
 
@@ -39,7 +41,15 @@ namespace GenerationEvent
 
         private void RunExperiments()
         {
-            int[] N = new int[] { 10, 100, 1000, 10000 };  // Разные значения N
+
+            if (currentIndex >= N.Length)
+            {
+                MessageBox.Show("Все эксперименты выполнены");
+                currentIndex = 0;  // Сбросить индекс, если нужно начать заново
+                return;  // Выход, если все эксперименты уже выполнены
+            }
+
+            int n = N[currentIndex];
             List<Tuple<string, double>> events = new List<Tuple<string, double>>();
             foreach (DataGridViewRow row in probabilitiesDataGridView.Rows)
             {
@@ -50,49 +60,42 @@ namespace GenerationEvent
             }
 
             StringBuilder results = new StringBuilder();
-            foreach (var n in N)
+            results.AppendLine($"Эксперимент с N = {n}:");
+            var counts = new Dictionary<string, int>();
+            foreach (var evt in events)
             {
-                results.AppendLine($"Эксперимент с N = {n}:");
-                var counts = new Dictionary<string, int>();
+                counts[evt.Item1] = 0;
+            }
+
+            Random rand = new Random();
+            for (int i = 0; i < n; i++)
+            {
+                double r = rand.NextDouble();
+                double cumulative = 0;
                 foreach (var evt in events)
                 {
-                    counts[evt.Item1] = 0;
-                }
-
-                Random rand = new Random();
-                for (int i = 0; i < n; i++)
-                {
-                    double r = rand.NextDouble();
-                    double cumulative = 0;
-                    foreach (var evt in events)
+                    cumulative += evt.Item2;
+                    if (r < cumulative)
                     {
-                        cumulative += evt.Item2;
-                        if (r < cumulative)
-                        {
-                            counts[evt.Item1]++;
-                            break;
-                        }
+                        counts[evt.Item1]++;
+                        break;
                     }
                 }
-
-                foreach (var evt in events)
-                {
-                    double empiricalProbability = (double)counts[evt.Item1] / n;
-                    results.AppendLine($"Событие {evt.Item1}: Теоретическая = {evt.Item2}, Эмпирическая = {empiricalProbability}");
-                }
-                results.AppendLine();
-                chart1.Series.Clear();
-                foreach (var evt in events)
-                {
-                    var series = chart1.Series.Add(evt.Item1);
-                    series.Points.AddXY("Теоретическая", evt.Item2);
-                    double empiricalProbability = (double)counts[evt.Item1] / N.Last();
-                    series.Points.AddXY("Эмпирическая", empiricalProbability);
-                }
-
             }
-            resultTextBox.Text = (results.ToString());
 
+            chart1.Series.Clear();
+            foreach (var evt in events)
+            {
+                var series = chart1.Series.Add(evt.Item1);
+                double empiricalProbability = (double)counts[evt.Item1] / n;
+                series.Points.AddXY("Теоретическая", evt.Item2);
+                series.Points.AddXY("Эмпирическая", empiricalProbability);
+                results.AppendLine($"Событие {evt.Item1}: Теоретическая = {evt.Item2}, Эмпирическая = {empiricalProbability}");
+            }
+            results.AppendLine();
+
+            resultTextBox.Text = results.ToString();
+            currentIndex++;  // Увеличиваем индекс для следующего нажатия кнопки
         }
 
         private void runExperimentButton_Click(object sender, EventArgs e)
